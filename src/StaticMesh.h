@@ -9,6 +9,7 @@ public:
     void release();
 
     static StaticMesh LoadMesh(const std::string &filename);
+    static StaticMesh LoadMesh2(const std::string &filename);
     void draw();
 
 	bool hasNormal() const;

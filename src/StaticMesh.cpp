@@ -1,5 +1,7 @@
 #include "StaticMesh.h"
 #include "tiny_obj_loader.h"
+#include <glm/vec3.hpp>
+#include <glm/glm.hpp>
 
 StaticMesh::StaticMesh()
     : m_uv(false), m_normal(false)
@@ -67,6 +69,96 @@ StaticMesh StaticMesh::LoadMesh(const std::string &filename)
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ret.ibo);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * shapes[0].mesh.indices.size(),
         shapes[0].mesh.indices.data(), GL_STATIC_DRAW);
+
+    ret.numIndices = shapes[0].mesh.indices.size();
+
+    glBindVertexArray(0);
+    return ret;
+}
+
+StaticMesh StaticMesh::LoadMesh2(const std::string &filename)
+{
+
+    std::vector<tinyobj::shape_t> shapes;
+    {
+        std::vector<tinyobj::material_t> materials;
+        std::string error_string;
+        if (!tinyobj::LoadObj(shapes, materials, error_string, filename.c_str()))
+        {
+            // GG
+        }
+
+        /*
+		if (shapes.size() == 0)
+			GG
+
+		if (shapes[0].mesh.texcoords.size() == 0 || shapes[0].mesh.normals.size() == 0)
+			GG*/
+    }
+
+    StaticMesh ret;
+    glGenVertexArrays(1, &ret.vao);
+    glBindVertexArray(ret.vao);
+
+    glGenBuffers(3, ret.vbo);
+    glGenBuffers(1, &ret.ibo);
+
+    // Upload postion array
+    glBindBuffer(GL_ARRAY_BUFFER, ret.vbo[0]);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * shapes[0].mesh.positions.size(),
+                 shapes[0].mesh.positions.data(), GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+
+    for (int i = 0; i < shapes[0].mesh.indices.size() / 3; ++i)
+    {
+        glm::vec3 p0(
+            shapes[0].mesh.positions[shapes[0].mesh.indices[i * 3 + 0] * 3],
+            shapes[0].mesh.positions[shapes[0].mesh.indices[i * 3 + 0] * 3 + 1],
+            shapes[0].mesh.positions[shapes[0].mesh.indices[i * 3 + 0] * 3 + 2]);
+        glm::vec3 p1(
+            shapes[0].mesh.positions[shapes[0].mesh.indices[i * 3 + 1] * 3],
+            shapes[0].mesh.positions[shapes[0].mesh.indices[i * 3 + 1] * 3 + 1],
+            shapes[0].mesh.positions[shapes[0].mesh.indices[i * 3 + 1] * 3 + 2]);
+        glm::vec3 p2(
+            shapes[0].mesh.positions[shapes[0].mesh.indices[i * 3 + 2] * 3],
+            shapes[0].mesh.positions[shapes[0].mesh.indices[i * 3 + 2] * 3 + 1],
+            shapes[0].mesh.positions[shapes[0].mesh.indices[i * 3 + 2] * 3 + 2]);
+        glm::vec3 norm = glm::cross(p1 - p0, p2 - p0);
+        shapes[0].mesh.normals[shapes[0].mesh.indices[i * 3 + 0] * 3] = norm.x;
+        shapes[0].mesh.normals[shapes[0].mesh.indices[i * 3 + 0] * 3 + 1] = norm.y;
+        shapes[0].mesh.normals[shapes[0].mesh.indices[i * 3 + 0] * 3 + 2] = norm.z;
+    }
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+
+    if (shapes[0].mesh.texcoords.size() > 0)
+    {
+
+        // Upload texCoord array
+        glBindBuffer(GL_ARRAY_BUFFER, ret.vbo[1]);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * shapes[0].mesh.texcoords.size(),
+                     shapes[0].mesh.texcoords.data(), GL_STATIC_DRAW);
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, 0);
+        ret.m_uv = true;
+    }
+
+    if (shapes[0].mesh.normals.size() > 0)
+    {
+        // Upload normal array
+        glBindBuffer(GL_ARRAY_BUFFER, ret.vbo[2]);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * shapes[0].mesh.normals.size(),
+                     shapes[0].mesh.normals.data(), GL_STATIC_DRAW);
+
+        glEnableVertexAttribArray(2);
+        glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, 0);
+        ret.m_normal = true;
+    }
+
+    // Setup index buffer for glDrawElements
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ret.ibo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * shapes[0].mesh.indices.size(),
+                 shapes[0].mesh.indices.data(), GL_STATIC_DRAW);
 
     ret.numIndices = shapes[0].mesh.indices.size();
 
