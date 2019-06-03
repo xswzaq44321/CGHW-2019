@@ -17,7 +17,7 @@ void main()
     vec3 l = normalize(light_pos - g_position);
     vec3 n = normalize(g_normal);
     float cosine = max(dot(l, n), 0);
-    vec3 r = reflect(l, n);
+    vec3 r = reflect(-l, n);
     vec3 e = normalize(eye_pos - g_position);
     vec3 h = normalize(l + e);
     float spec;
@@ -25,7 +25,7 @@ void main()
     if(bling_phong == 1){
         spec = cosine * pow(dot(n, h), 30);
     }else{
-        spec = cosine*pow(dot(r, e), 30);
+        spec = cosine * pow(max(dot(r, e), 0), 30);
     }
 
     color = vec4(object_color*texture(text, g_uv).rgb*cosine+spec, 1.0);

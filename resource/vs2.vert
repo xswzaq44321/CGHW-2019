@@ -25,12 +25,12 @@ void main()
     vec3 l = normalize(light_pos - v_position);
     vec3 n = normalize(v_normal);
     v_cosine = max(dot(l, n), 0);
-    vec3 r = reflect(l, n);
+    vec3 r = reflect(-l, n);
     vec3 e = normalize(eye_pos - v_position);
     vec3 h = normalize(l + e);
     if(bling_phong == 1){
         v_spec = v_cosine * pow(dot(n, h), 30);
     }else{
-        v_spec = v_cosine*pow(dot(r, e), 30);
+        v_spec = v_cosine*pow(max(dot(r, e), 0), 30);
     }
 }
