@@ -140,12 +140,18 @@ int main(void)
 				GLuint texture;
 				glGenTextures(1, &texture);
 				glBindTexture(GL_TEXTURE_2D, texture);
-
 				glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, display_w, display_h, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-
 				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+				glBindTexture(GL_TEXTURE_2D, 0);
 				glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture, 0);
+
+				GLuint rbo;
+				glGenRenderbuffers(1, &rbo);
+				glBindRenderbuffer(GL_RENDERBUFFER, rbo);
+				glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, display_w, display_h);  
+				glBindRenderbuffer(GL_RENDERBUFFER, 0);
+				glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
 
 				if (glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE)
 					std::cout << "YES" << std::endl;
@@ -157,6 +163,7 @@ int main(void)
 					glViewport(0, 0, display_w, display_h);
 					glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
 					glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+					glEnable(GL_DEPTH_TEST);
 					auto prog_normal = Program::LoadFromFile(
 						"../resource/vs.vert",
 						"../resource/gs.geom",
@@ -165,7 +172,7 @@ int main(void)
 					
 					prog_normal["vp"] = glm::perspective(45 / 180.0f * 3.1415926f, 16.0f / 9.0f, 0.1f, 10000.0f) *
 										glm::lookAt(glm::vec3{0, 0, 10}, glm::vec3{0, 0, 0}, glm::vec3{0, 1, 0});
-					prog_normal["model"] = glm::rotate(glm::mat4(1.0f), i * 10 * 3.1415926f / 180.0f, glm::vec3(0, 1, 0));
+					prog_normal["model"] = glm::rotate(glm::mat4(1.0f), degree * 3.1415926f / 180.0f, glm::vec3(0, 1, 0));
 					prog_normal["object_color"] = object_color;
 					prog_normal["light_pos"] = light_pos;
 					prog_normal["eye_pos"] = glm::vec3{0, 0, 10};
@@ -174,7 +181,7 @@ int main(void)
 					prog_normal.use();
 					prog_normal["flat_shading"] = 0;
 					mesh.draw();
-					prog_normal["model"] = glm::translate(glm::mat4(), glm::vec3(-5, 0, 0)) * glm::rotate(glm::mat4(1.0f), i * 10 * 3.1415926f / 180.0f, glm::vec3(0, 1, 0));
+					prog_normal["model"] = glm::translate(glm::mat4(), glm::vec3(-i / 2.0f, 0, 0)) * glm::rotate(glm::mat4(1.0f), degree * 3.1415926f / 180.0f, glm::vec3(0, 1, 0));
 					mesh.draw();
 
 					std::vector<unsigned char> raw_data(display_w * display_h * 4);
@@ -182,6 +189,7 @@ int main(void)
 					char temp[100];
 					sprintf(temp, "normal%d.png", i);
 					lodepng::encode(temp, raw_data, display_w, display_h);
+					glDisable(GL_DEPTH_TEST);
 				}
 
 				glBindFramebuffer(GL_FRAMEBUFFER, 0);
