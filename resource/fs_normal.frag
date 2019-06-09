@@ -19,10 +19,11 @@ void main()
     vec3 e = normalize(eye_pos - g_position);
     vec3 h = normalize(l + e);
     float spec = cosine * pow(dot(n, h), 30);
-    // vec3 bar = normalize(g_normal);
-    // bar = bar * 0.5 + 0.5;
+    vec3 bar = normalize(g_normal);
+    bar = bar * 0.5 + 0.5;
 
 
-    color = vec4(object_color*texture(text, g_uv).rgb*cosine+spec, 1.0);
-    // color = vec4(object_color * bar, 1.0);
+    // color = vec4(object_color*texture(text, g_uv).rgb*cosine+spec, 1.0);
+    color = vec4(object_color * bar, 1.0);
+    // color = vec4(object_color * texture(text, g_uv).rgb, 1.0);
 }
