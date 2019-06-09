@@ -184,12 +184,34 @@ int main(void)
 					prog_normal["model"] = glm::translate(glm::mat4(), glm::vec3(-i / 2.0f, 0, 0)) * glm::rotate(glm::mat4(1.0f), degree * 3.1415926f / 180.0f, glm::vec3(0, 1, 0));
 					mesh.draw();
 
-					std::vector<unsigned char> raw_data(display_w * display_h * 4);
-					glReadPixels(0, 0, display_w, display_h, GL_RGBA, GL_UNSIGNED_BYTE, raw_data.data());
-					char temp[100];
-					sprintf(temp, "normal%d.png", i);
-					lodepng::encode(temp, raw_data, display_w, display_h);
+					std::vector<unsigned char> raw_data(display_w * display_h * 3);
+					glReadPixels(0, 0, display_w, display_h, GL_RGB, GL_UNSIGNED_BYTE, raw_data.data());
+					// char temp[100];
+					// sprintf(temp, "normal%d.png", i);
+					// lodepng::encode(temp, raw_data2, display_w, display_h);
 					glDisable(GL_DEPTH_TEST);
+					
+					cv::Mat src = cv::Mat(display_h, display_w, CV_8UC3, raw_data.data());
+					cv::Mat dst;
+					cv::bilateralFilter(src, dst, 5 ,150 ,150);
+					std::vector<unsigned char> blur(dst.rows * dst.cols);
+					if (dst.isContinuous())
+						blur.assign((unsigned char*)dst.datastart, (unsigned char*)dst.dataend);
+
+					std::vector<unsigned char> raw_data2(blur.size() * 4/3);
+					for(int i = 0; i < dst.cols; ++i){
+						for(int j = 0; j < dst.rows; ++j){
+							raw_data2[(i * dst.rows + j) * 4 + 0] = blur[(i * dst.rows + j) * 3 + 0];
+							raw_data2[(i * dst.rows + j) * 4 + 1] = blur[(i * dst.rows + j) * 3 + 1];
+							raw_data2[(i * dst.rows + j) * 4 + 2] = blur[(i * dst.rows + j) * 3 + 2];
+							raw_data2[(i * dst.rows + j) * 4 + 3] = 255;
+						}
+					}
+
+					lodepng::encode("normal.png", raw_data2, display_w, display_h);
+					//cv::imshow("origin2", src2);
+					//cv::imshow("bilateralBlur", dst2);
+					cv::waitKey(0);
 				}
 
 				glBindFramebuffer(GL_FRAMEBUFFER, 0);
